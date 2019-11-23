@@ -1,4 +1,7 @@
-// The createElement Function
+////////////////////////////////////////////////////////////////////
+// step 1: The createElement Function
+////////////////////////////////////////////////////////////////////
+
 // element is an object with type and props so we need a function to create the object
 function createElement(type, props, ...children) {
 	return {
@@ -46,4 +49,24 @@ const element = Didact.createElement(
 
 const container = document.getElementById("root");
 
-LibDOM.render(element, container)
+
+////////////////////////////////////////////////////////////////////
+// Step 2: rewrite render function
+////////////////////////////////////////////////////////////////////
+// ReactDOM.render(element, container)
+
+// create dom node using element type and append new node to container if element is type text_element create a text node intead
+function render(element, container) {
+	const dom = element.type == "TEXT_ELEMENT" ? document.createTextNode("") : document.createElement(element.type);
+
+	element.props.children.forEach(child => render(child, dom)); // recursively do that for each child
+
+	// assing element props to the node
+	const isProperty = key => key !== "children"
+	Object.keys(element.props).filter(isProperty).forEach(name => {
+		dom[name] = element.props[name]
+	})
+
+
+	container.appendChild(dom);
+}
