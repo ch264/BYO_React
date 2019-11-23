@@ -51,36 +51,95 @@ const container = document.getElementById("root");
 
 
 ////////////////////////////////////////////////////////////////////
-// Step 2: rewrite render function
+// Step 4: rewrite render function for fibre tree to make it easy to find the next unit of work
 ////////////////////////////////////////////////////////////////////
-// ReactDOM.render(element, container)
+// once rendering we will not stop until we have renedered the complete element tree. if the element tree is big, it may block the main thread for too long and high priority stuff such as handling user input will have to wait until the render finishes. therefore we break the work into small units and after we finish each unit we will let the browser interrupt the rendering if there is anything else that needs to be done
 
 // create dom node using element type and append new node to container if element is type text_element create a text node intead
-function render(element, container) {
-	const dom = element.type == "TEXT_ELEMENT" ? document.createTextNode("") : document.createElement(element.type);
+function createDom(fiber) {
+	const dom = fiber.type == "TEXT_ELEMENT" ? document.createTextNode("") : document.createElement(element.type);
 	// assing element props to the node
 	const isProperty = key => key !== "children"
 	Object.keys(element.props).filter(isProperty).forEach(name => {
 		dom[name] = element.props[name]
 	})
+	return dom
+}
+
+// set nextUnitOfWork to the root of the fiber tree
+function render (element, container) {
+	nextUnitofWork = {
+		dom: container,
+		props: {
+			children: [element],
+		}
+	}
+}
 
 
 //	element.props.children.forEach(child => render(child, dom)); // recursively do that for each child
 	let nextUnitofWork = null
+
 	function workLoop(deadline) {
 		let shouldYield = false;
 		while (nextUnitofWork && !shouldYield) {
-			// start using loop, perform function performs the work and returns the next unit of work
+			// start using loop, perform function performs the work and returns the next unit of work when browser is ready
 			nextUnitofWork = performUnitOfWork(nextUnitofWork)
+			shouldYield = deadline.timeRemaining() < 1;
 		}
 		requestIdleCallback(workLoop) // like setTimeout but browser will run the callback when the main thread is idle.
 	}
 
-		requestIdleCallback(workLoop)
+	requestIdleCallback(workLoop)
 	
-		function performUnitOfWork(nextUnitofWork) {
-			// todo
-		}
+	function performUnitOfWork(fiber) {
+			// 1. add the element to the dom
+			
+			if (!fiber.dom) {
+				fiber.dom = createDom(fiber); // keep track of dom in fiber.dom property
+			}
+
+			if (fiber.parent) {
+				fiber.parent.dom.appendChild(fiber.dom)
+			}
+
+			// 2. for each of elements child create a new fiber
+
+			const elements = fiber.props.children;
+			let index = 0
+			let prevSibling = null
+
+			while (index < elements.length) {
+				const element = elements[index]
+				const newFiber = {
+					type: element.type,
+					props: element.props,
+					parent: fiber,
+					dom: null
+				}
+				// add child to fiber tree as child or sibling
+				if (index === 0) {
+					fiber.child = newFiber
+				} else {
+					prevSibling.sibling = newFiber
+				}
+				prevSibling = newFiber;
+				index++; 
+			}
+
+			// 3. select the next unit of work. first try with child, then sibling then with uncle
+			if (fiber.child) {
+				return fiber.child
+			}
+			let nextFiber = fiber;
+			while (nextFiber) {
+				if (nextFiber.sibling) {
+					return nextFiber.sibling
+				}
+				nextFiber = nextFiber.parent
+			}
+
+	}
 
 	container.appendChild(dom);
 }
