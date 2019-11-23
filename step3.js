@@ -53,7 +53,7 @@ const container = document.getElementById("root");
 ////////////////////////////////////////////////////////////////////
 // Step 4: rewrite render function for fibre tree to make it easy to find the next unit of work
 ////////////////////////////////////////////////////////////////////
-// once rendering we will not stop until we have renedered the complete element tree. if the element tree is big, it may block the main thread for too long and high priority stuff such as handling user input will have to wait until the render finishes. therefore we break the work into small units and after we finish each unit we will let the browser interrupt the rendering if there is anything else that needs to be done
+// once rendering we will not stop until we have renedered the complete element tree. if the element tree is big, it may block the main thread for too long and high priority stuff such as handling user input will have to wait until the render finishes. therefore we break the work into small units and after we finish each unit we will let the browser interrupt the rendering if there is anything else that needs to be done.
 
 // create dom node using element type and append new node to container if element is type text_element create a text node intead
 function createDom(fiber) {
