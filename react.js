@@ -20,6 +20,10 @@ const container = document.getElementById("root");
 const node = document.createElement(element.type); // create node
 node["title"] = element.props.title; // assign all element props to node
 
-// create nodes for children
+// create nodes for children (Text node for string instead of innerText
 const text = document.createTextNode("");
 text["nodeValue"] = element.props.children;
+
+// append text node to h1 and 1 container
+node.appendChild(text)
+container.appendChild(node)
